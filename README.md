@@ -1,6 +1,6 @@
 # txt2im
 text-to-image synthesis in Pytorch
 
-![Images](https://github.com/xuanto/txt2im/blob/master/images.pdf)
+<img src="images.pdf" width="900px" height="350px"/>
 
-![Images on iterations](https://github.com/xuanto/txt2im/blob/master/change.pdf)
+<img src="change.pdf" width="900px" height="350px"/>
