@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-??
+file: models.py
 """
 import json
 import random
@@ -149,9 +149,6 @@ class Generator(nn.Module):
         #                             GBlock(8*chn, 4*chn, condition_dim = self.c_dim),
         #                             GBlock(4*chn, 2*chn, condition_dim = self.c_dim),
         #                             GBlock(2*chn, 1*chn, condition_dim = self.c_dim)])
-
-        # TODO impl ScaledCrossReplicaBatchNorm 
-        # self.ScaledCrossReplicaBN = ScaledCrossReplicaBatchNorm2d(1*chn)
         self.colorize = SpectralNorm(nn.Conv2d(1*chn, 3, [3, 3], padding=1))
 
     def forward(self, z, sentence_emb, words_emb):
@@ -399,53 +396,43 @@ class Trainer(object):
         words_emb = captions.cuda(self.cuda_id)
         sent_emb = torch.mean(captions,1).cuda(self.cuda_id)
         # print(words_emb.shape,sent_emb.shape)
+        
+        d_out_real, c_real_labels = self.D(real_images, sent_emb, words_emb, 1)
+        # d_loss_real = F.relu(1.0 - (d_out_real+c_real_labels),True).mean()
+        d_loss_real = F.relu(1.0 - d_out_real,True).mean() + F.relu(1.0 - c_real_labels,True).mean()
 
-        if True : #self.n_iter % 2 == 0:
-            d_out_real, c_real_labels = self.D(real_images, sent_emb, words_emb, 1)
-            # d_loss_real = F.relu(1.0 - (d_out_real+c_real_labels),True).mean()
-            d_loss_real = F.relu(1.0 - d_out_real,True).mean() + F.relu(1.0 - c_real_labels,True).mean()
+        # apply Gumbel Softmax
+        z = torch.randn(batch_size, self.z_dim).to(self.cuda_id)
+        
+        fake_images = self.G(z, sent_emb, words_emb).detach()
+        d_out_fake, c_fake_labels = self.D(fake_images, sent_emb, words_emb, 1)
 
-            # apply Gumbel Softmax
-            z = torch.randn(batch_size, self.z_dim).to(self.cuda_id)
-            
-            fake_images = self.G(z, sent_emb, words_emb).detach()
-            d_out_fake, c_fake_labels = self.D(fake_images, sent_emb, words_emb, 1)
+        # d_loss_fake = d_out_fake.mean()
+        # d_loss_fake = F.relu(1.0 + (d_out_fake+c_fake_labels),True).mean()
+        d_loss_fake = F.relu(1.0 + d_out_fake,True).mean() + F.relu(1.0 + c_fake_labels,True).mean()
+        # d_loss_fake = F.relu(1.0 + (d_out_fake),True).mean()
 
-            # d_loss_fake = d_out_fake.mean()
-            # d_loss_fake = F.relu(1.0 + (d_out_fake+c_fake_labels),True).mean()
-            d_loss_fake = F.relu(1.0 + d_out_fake,True).mean() + F.relu(1.0 + c_fake_labels,True).mean()
-            # d_loss_fake = F.relu(1.0 + (d_out_fake),True).mean()
-
-            # d_loss =  d_loss_real + self.k_t * d_loss_fake
-            d_loss =  d_loss_real + d_loss_fake
-            self.reset_grad()
-            d_loss.backward()
-            self.D_optimizer.step()
+        # d_loss =  d_loss_real + self.k_t * d_loss_fake
+        d_loss =  d_loss_real + d_loss_fake
+        self.reset_grad()
+        d_loss.backward()
+        self.D_optimizer.step()
 
         # ================== Train G and gumbel ================== #
         # Create random noise
         # if self.n_iter % 5 == 1:
-        if True:
-            z = torch.randn(batch_size, self.z_dim).to(self.cuda_id)
-            fake_images = self.G(z, sent_emb, words_emb)
+        z = torch.randn(batch_size, self.z_dim).to(self.cuda_id)
+        fake_images = self.G(z, sent_emb, words_emb)
 
-            # Compute loss with fake images
-            g_out_fake , g_fake_labels= self.D(fake_images, sent_emb, words_emb)  # batch x n
-            # g_loss_fake = 5 * self.criterion(g_fake_labels,real_labels) - g_out_fake.mean()
-            g_loss_fake =  - (g_out_fake.mean() + g_fake_labels.mean())
+        # Compute loss with fake images
+        g_out_fake , g_fake_labels= self.D(fake_images, sent_emb, words_emb)  # batch x n
+        # g_loss_fake = 5 * self.criterion(g_fake_labels,real_labels) - g_out_fake.mean()
+        g_loss_fake =  - (g_out_fake.mean() + g_fake_labels.mean())
             # g_loss_fake =  - (g_fake_labels).mean()
 
-            self.reset_grad()
-            g_loss_fake.backward()
-            self.G_optimizer.step()
-
-        # balance = (self.gamma * d_loss_real - g_loss_fake).item()
-        # measure = d_loss_real.item() + abs(balance)
-        # self.k_t += self.lambda_k * balance
-        # self.k_t = max(min(1, self.k_t), 0)
-        # self.add_scalars("hp/balance",balance,self.n_iter)
-        # self.add_scalars("hp/measure",measure,self.n_iter)
-        # self.add_scalars("hp/k_t",self.k_t,self.n_iter)
+        self.reset_grad()
+        g_loss_fake.backward()
+        self.G_optimizer.step()
 
         if self.n_iter % 16 == 8:
             #     self.add_scalars("loss/D_loss_real",d_loss_real.item(),self.n_iter)
