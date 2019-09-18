@@ -15,4 +15,4 @@ text-to-image synthesis in Pytorch
 <img src="images/coco_diff.jpg" height="250px"/>
 
 ## images on iterations:
-<img src="images_on_iters.jpg" height="350px"/>
+<img src="images/images_on_iters.jpg" height="350px"/>
