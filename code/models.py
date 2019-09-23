@@ -282,11 +282,7 @@ class Trainer(object):
         self.chn = cfgs.channels
         self.lambda_gp = 10
         self.cuda_id = cfgs.cuda_id
-        
-        # self.k_t = 0
-        # self.lambda_k = 0.005
-        # self.gamma = 0.5
-# 
+         
         self.text_encoder = RNN_ENCODER(5450, nhidden=256).cuda(self.cuda_id)
         state_dict = torch.load("../DAMSMencoders/bird/text_encoder200.pth",map_location=lambda storage, loc: storage)
         self.text_encoder.load_state_dict(state_dict)
@@ -376,20 +372,6 @@ class Trainer(object):
             target {[type]} -- [(B,16,768)]
         """
         # ================== Train D ================== #
-        # self.D.train()
-        # self.G.train()
-        """
-        imgs, captions, cap_lens, class_ids, keys = self.prepare_data(batch)
-        # image, target, label = batch
-        batch_size = captions.shape[0]
-        
-        hidden = self.text_encoder.init_hidden(batch_size)
-        captions, cap_lens = captions.cuda(self.cuda_id), cap_lens.cuda(self.cuda_id)
-        words_emb, sent_emb = self.text_encoder(captions, cap_lens, hidden)
-        # words_emb, sent_emb = words_emb.cuda(self.cuda_id), sent_emb.cuda(self.cuda_id)
-        real_images = imgs[0].cuda(self.cuda_id)
-        """
-
         imgs , captions = batch
         real_images = imgs.cuda(self.cuda_id)
         batch_size = real_images.shape[0]
@@ -435,11 +417,6 @@ class Trainer(object):
         self.G_optimizer.step()
 
         if self.n_iter % 16 == 8:
-            #     self.add_scalars("loss/D_loss_real",d_loss_real.item(),self.n_iter)
-            #     self.add_scalars("loss/D_loss_fake",d_loss_fake.item(),self.n_iter)
-            #     self.add_scalars("loss/D_loss",d_loss.item(),self.n_iter)
-            #     self.add_scalars("loss/G_loss",g_loss_fake.item(),self.n_iter)  
-
             self.add_scalars("loss/D_loss_real",d_loss_real.item(),self.n_iter)
             self.add_scalars("loss/D_loss_fake",d_loss_fake.item(),self.n_iter)
             self.add_scalars("loss/D_loss",d_loss.item(),self.n_iter)
@@ -488,15 +465,6 @@ class Trainer(object):
 
 
     def validate(self,batch):
-        # imgs, captions, cap_lens, class_ids, keys = self.prepare_data(batch)
-        # # image, target, label = batch
-        # batch_size = captions.shape[0]
-        
-        # hidden = self.text_encoder.init_hidden(batch_size)
-        # captions, cap_lens = captions.cuda(self.cuda_id), cap_lens.cuda(self.cuda_id)
-        # words_emb, sent_emb = self.text_encoder(captions, cap_lens, hidden)
-        # words_emb, sent_emb = words_emb.cuda(self.cuda_id), sent_emb.cuda(self.cuda_id)
-
         imgs , captions = batch
         real_images = imgs.cuda(self.cuda_id)
         batch_size = real_images.shape[0]
@@ -505,9 +473,7 @@ class Trainer(object):
 
         # apply Gumbel Softmax
         z = torch.randn(batch_size, self.z_dim).to(self.cuda_id)
-        
         fake_images = self.G(z, sent_emb, words_emb).detach().cpu()
-
 
         for i in fake_images:
             self.save_image_id += 1

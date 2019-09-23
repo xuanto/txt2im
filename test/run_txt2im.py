@@ -25,8 +25,24 @@ import argparse
 
 
 
-def run_txt2img():
+def run_txt2img(list_of_captions):
+    z = torch.randn(batch_size, self.z_dim).to(self.cuda_id)
+        
+    fake_images = self.G(z, sent_emb, words_emb).detach()
     pass
+
+    imgs , captions = batch
+    batch_size = real_images.shape[0]
+    words_emb = captions.cuda(self.cuda_id)
+    sent_emb = torch.mean(captions,1).cuda(self.cuda_id)
+
+    z = torch.randn(batch_size, self.z_dim).to(self.cuda_id)
+    fake_images = self.G(z, sent_emb, words_emb).detach().cpu()
+
+    for i, j in zip(fake_images, list_of_captions):
+        image_file_name = "/%d.jpg" % j
+        transforms.ToPILImage()(i).save(self.image_path + image_file_name)
+    return
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="settings for txt2im model")
