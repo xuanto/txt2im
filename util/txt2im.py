@@ -24,6 +24,12 @@ from datasets import TextDataset,prepare_data
 import argparse
 
 
+def read_file(file_path="input.txt"):
+    with open(file_path) as f:
+        for line in f:
+            yield line[:-1] 
+
+
 
 def run_txt2img(list_of_captions):
     z = torch.randn(batch_size, self.z_dim).to(self.cuda_id)
