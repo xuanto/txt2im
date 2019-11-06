@@ -72,10 +72,6 @@ class RNN_ENCODER(nn.Module):
     def init_weights(self):
         initrange = 0.1
         self.encoder.weight.data.uniform_(-initrange, initrange)
-        # Do not need to initialize RNN parameters, which have been initialized
-        # http://pytorch.org/docs/master/_modules/torch/nn/modules/rnn.html#LSTM
-        # self.decoder.weight.data.uniform_(-initrange, initrange)
-        # self.decoder.bias.data.fill_(0)
 
     def init_hidden(self, bsz):
         weight = next(self.parameters()).data
