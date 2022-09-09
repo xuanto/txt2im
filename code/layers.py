@@ -2,13 +2,10 @@
 """
 ??
 """
-#import math
-import os
-import sys
 import json
+import os
 import random
-
-#_______ torch _______
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -16,7 +13,9 @@ import torch.nn.functional as F
 from torch.nn import Parameter
 from torch.nn import init
 
+
 class combLayer(nn.Module):
+
     def __init__(self, la, lb, mod):
         """
         Arguments:
@@ -45,6 +44,7 @@ class combLayer(nn.Module):
             self.forward = self.no_c
         #self.L4x4 = SpectralNorm(nn.Linear(self.out_channels, 8 * 64))
 
+
     def inner_product(self, a, b, k=1):
         """
         Arguments:
@@ -68,10 +68,12 @@ class combLayer(nn.Module):
         # print(c.shape,a1.shape)
         return c + a1
 
+
     def concat(self, a, b):
         c = torch.cat([a,b],1)
         c = F.relu(self.L4x4(c),True)
         return c
+
 
     def product(self, a, b, k=1):
         a1 = self.L1(a)
@@ -80,9 +82,11 @@ class combLayer(nn.Module):
         #c = self.L4x4(c)
         return c
 
+
     def no_c(self, a, b):
         #c = self.L4x4(a)
         return a
+
 
 class ChannelWiseAttention(nn.Module):
     """docstring for ChannelWiseAttention"""
@@ -159,17 +163,21 @@ class SpectralNorm(nn.Module):
         self._update_u_v()
         return self.module.forward(*args)
 
+
 def init_linear(linear):
     init.xavier_uniform_(linear.weight)
     linear.bias.data.zero_()
+
 
 def init_conv(conv, glu=True):
     init.xavier_uniform_(conv.weight)
     if conv.bias is not None:
         conv.bias.data.zero_()
 
+
 # def leaky_relu(input):
 #     return F.leaky_relu(input, negative_slope=0.2)
+
 
 class SelfAttention(nn.Module):
     """ Self attention Layer"""
@@ -178,7 +186,8 @@ class SelfAttention(nn.Module):
         self.chanel_in = in_dim
         self.activation = activation
         
-        self.query_conv = nn.Conv2d(in_channels = in_dim , out_channels = in_dim//8 , kernel_size= 1)
+        self.query_conv = nn.Conv2d(
+            in_channels = in_dim , out_channels = in_dim//8 , kernel_size= 1)
         self.key_conv = nn.Conv2d(in_channels = in_dim , out_channels = in_dim//8 , kernel_size= 1)
         self.value_conv = nn.Conv2d(in_channels = in_dim , out_channels = in_dim , kernel_size= 1)
         self.gamma = nn.Parameter(torch.zeros(1))
@@ -188,6 +197,7 @@ class SelfAttention(nn.Module):
         init_conv(self.query_conv)
         init_conv(self.key_conv)
         init_conv(self.value_conv)
+
         
     def forward(self,x):
         """
@@ -218,8 +228,10 @@ class GlobalAttentionGeneral(nn.Module):
         self.sm = nn.Softmax(dim=1)
         self.mask = None
 
+
     def applyMask(self, mask):
         self.mask = mask  # batch x sourceL
+
 
     def forward(self, input, context):
         """
@@ -263,8 +275,6 @@ class GlobalAttentionGeneral(nn.Module):
         return weightedContext, attn
 
 
-
-
 class ConditionalNorm(nn.Module):
     def __init__(self, in_channel, n_condition=788):
         super().__init__()
@@ -274,6 +284,7 @@ class ConditionalNorm(nn.Module):
         self.embed = nn.Linear(n_condition, in_channel* 2)
         self.embed.weight.data[:, :in_channel] = 1
         self.embed.weight.data[:, in_channel:] = 0
+
 
     def forward(self, input, class_id):
         """
@@ -297,6 +308,7 @@ class ConditionalNorm(nn.Module):
         # print(beta.size())
         out = gamma * out + beta
         return out
+
 
 class GBlock(nn.Module):
     def __init__(self, in_channel, out_channel, kernel_size=[3, 3],
@@ -325,6 +337,7 @@ class GBlock(nn.Module):
         if bn:
             self.HyperBN = ConditionalNorm(in_channel, condition_dim)
             self.HyperBN_1 = ConditionalNorm(out_channel, condition_dim)
+
 
     def forward(self, input, condition=None):
         """
@@ -369,8 +382,6 @@ class GBlock(nn.Module):
         return out + skip
 
 
-
-
 class CA_NET(nn.Module):
     # some code is modified from vae examples
     # (https://github.com/pytorch/examples/blob/master/vae/main.py)
@@ -382,16 +393,19 @@ class CA_NET(nn.Module):
         self.relu = nn.ReLU()
         self.cuda_id = cfgs.cuda_id
 
+
     def encode(self, text_embedding):
         x = self.relu(self.fc(text_embedding))
         mu = x[:, :self.c_dim]
         logvar = x[:, self.c_dim:]
         return mu, logvar
 
+
     def reparametrize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
         eps = torch.randn(std.size()).to(self.cuda_id)
         return eps.mul(std).add_(mu)
+
 
     def forward(self, text_embedding):
         mu, logvar = self.encode(text_embedding)
@@ -405,6 +419,7 @@ class WordAttention(nn.Module):
         super(WordAttention, self).__init__()
         self.text_attention = nn.Sequential( SpectralNorm(nn.Linear(16, 16, bias=True)),
                                              nn.Sigmoid() )
+
 
     def forward(self, word_emb, sent_emb):
         """

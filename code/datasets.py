@@ -3,24 +3,20 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-
-from nltk.tokenize import RegexpTokenizer
 from collections import defaultdict
-from cfg.config import cfg
-
-import torch
-import torch.utils.data as data
-# from torch.autograd import Variable
-import torchvision.transforms as transforms
-
 import os
 import sys
-import numpy as np
-import pandas as pd
-from PIL import Image
-import numpy.random as random
 
+from cfg.config import cfg
+from nltk.tokenize import RegexpTokenizer
+import numpy as np
+import numpy.random as random
+import pandas as pd
 import pickle
+from PIL import Image
+import torch
+import torch.utils.data as data
+import torchvision.transforms as transforms
 
 
 def prepare_data(data, cuda_id):
@@ -108,6 +104,7 @@ class TextDataset(data.Dataset):
         self.class_id = self.load_class_id(split_dir, len(self.filenames))
         self.number_example = len(self.filenames)
 
+
     def load_bbox(self):
         data_dir = self.data_dir
         bbox_path = os.path.join(data_dir, 'CUB_200_2011/bounding_boxes.txt')
@@ -131,6 +128,7 @@ class TextDataset(data.Dataset):
             filename_bbox[key] = bbox
         #
         return filename_bbox
+
 
     def load_captions(self, data_dir, filenames):
         all_captions = []
@@ -165,6 +163,7 @@ class TextDataset(data.Dataset):
                     print('ERROR: the captions for %s less than %d'
                           % (filenames[i], cnt))
         return all_captions
+
 
     def build_dictionary(self, train_captions, test_captions):
         word_counts = defaultdict(float)
@@ -240,6 +239,7 @@ class TextDataset(data.Dataset):
             filenames = test_names
         return filenames, captions, ixtoword, wordtoix, n_words
 
+
     def load_class_id(self, data_dir, total_num):
         if os.path.isfile(data_dir + '/class_info.pickle'):
             with open(data_dir + '/class_info.pickle', 'rb') as f:
@@ -247,6 +247,7 @@ class TextDataset(data.Dataset):
         else:
             class_id = np.arange(total_num)
         return class_id
+
 
     def load_filenames(self, data_dir, split):
         filepath = '%s/%s/filenames.pickle' % (data_dir, split)
@@ -257,6 +258,7 @@ class TextDataset(data.Dataset):
         else:
             filenames = []
         return filenames
+
 
     def get_caption(self, sent_ix):
         # a list of indices for a sentence
@@ -277,6 +279,7 @@ class TextDataset(data.Dataset):
             x[:, 0] = sent_caption[ix]
             x_len = cfg.TEXT.WORDS_NUM
         return x, x_len
+
 
     def __getitem__(self, index):
         #

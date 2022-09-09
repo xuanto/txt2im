@@ -1,13 +1,13 @@
+# # import argparse
+
+from cfg.config import cfg as cfgs
+from datasets import TextDataset,prepare_data
+from models import *
+
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
-# # import argparse
-
 from tqdm import trange
-from models import *
-from datasets import TextDataset,prepare_data
-
-from cfg.config import cfg as cfgs
 
 
 def train():
