@@ -315,3 +315,4 @@ if __name__ == '__main__':
     ts =  transforms.Compose([transforms.Resize(imsize), transforms.ToTensor()])
     dataset = TextDataset(DATA_DIR, 'train2017',base_size=64,transform=image_transform,target_transform=ts)
     print(dataset.n_words, dataset.embeddings_num)
+
